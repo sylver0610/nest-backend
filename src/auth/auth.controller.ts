@@ -1,21 +1,40 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { UserService } from 'src/user/user.service';
-import { User } from 'src/schemas/user.schema';
+
+import { AuthGuard } from './auth.guard';
 import { CreateUserDto } from 'src/user/dto';
-@Controller('auth')
+import { LocalAuthGuard } from './local-auth.guard';
+
+import { JWTAuthGuard } from './jwt-auth.guard';
+@Controller()
 export class AuthController {
-  //auth service is automatically  created when initializing the controller
-  constructor(private authService: AuthService) {}
+    //auth service is automatically  created when initializing the controller
+    constructor(private authService: AuthService) {}
 
-  @Post('register')
-  register(
-    @Body()
-    user: CreateUserDto,
-  ): Promise<User> {
-    return this.authService.register(user);
-  }
+    @Post('register')
+    register(
+        @Body()
+        user: CreateUserDto,
+    ) {
+        return this.authService.register(user);
+    }
 
-  //   @Post('login')
-  //   login() {}
+    @UseGuards(LocalAuthGuard)
+    @Post('login')
+    handleLogin(@Request() req): Promise<object> {
+        return this.authService.login(req.user);
+    }
+
+    @UseGuards(AuthGuard)
+    @Post('logout')
+    handleLogout(@Request() req) {
+        return this.authService.logout(req.keyStore);
+    }
+
+    @UseGuards(AuthGuard)
+    @Post('handleRefreshToken')
+    handleRefreshToken(@Request() req) {
+        // console.log(typeof req.body.refreshToken, 'controller');
+        return this.authService.handleRefreshToken(req.refreshToken, req.user, req.keyStore);
+    }
 }

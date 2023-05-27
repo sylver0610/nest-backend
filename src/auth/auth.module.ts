@@ -1,14 +1,31 @@
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { MongooseModule } from '@nestjs/mongoose';
-import { UserSchema } from 'src/schemas/user.schema';
-import { UserService } from 'src/user/user.service';
-import { SharedModule } from 'src/shared/shared.module';
+import { PassportModule } from '@nestjs/passport';
+import { LocalStrategy } from './strategy/passport/local.strategy';
+import { UserModule } from 'src/user/user.module';
+import { JwtModule } from '@nestjs/jwt';
+import { jwtConstants } from './constant';
+import { JwtStrategy } from './strategy/jwt/jwt.strategy';
+import { KeyModule } from 'src/key/key.module';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: 'User', schema: UserSchema }]), SharedModule],
-  controllers: [AuthController],
-  providers: [AuthService, UserService],
+    imports: [
+        KeyModule,
+        UserModule,
+        PassportModule,
+        JwtModule.register({
+            secret: jwtConstants.secret,
+            signOptions: {
+                expiresIn: jwtConstants.expiresIn,
+            },
+        }),
+    ],
+    controllers: [AuthController],
+    providers: [
+        AuthService,
+        LocalStrategy,
+        // JwtStrategy
+    ],
 })
 export class AuthModule {}
